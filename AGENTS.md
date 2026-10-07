@@ -151,25 +151,16 @@ for public documentation.
 # 8. Configuration validation
 
 Configuration validation must check:
-```
-YAML/JSON syntax;
 
-required fields;
-
-valid regexes;
-
-valid destination addresses;
-
-duplicate rule names;
-
-duplicate patterns;
-
-maximum rule length;
-
-maximum rule count;
-
-no obviously unsafe patterns.
-```
+- YAML/JSON syntax;
+- required fields;
+- valid regexes;
+- valid destination addresses;
+- duplicate rule names;
+- duplicate patterns;
+- maximum rule length;
+- maximum rule count;
+- no obviously unsafe patterns.
 
 # 9. Tests
 
@@ -226,19 +217,14 @@ Do not leave obsolete diagrams or examples.
 Provider behavior changes over time.
 
 For current information about:
-```
-Cloudflare Email Routing;
 
-Cloudflare Email Workers;
+- Cloudflare Email Routing;
+- Cloudflare Email Workers;
+- Cloudflare pricing;
+- SMTP provider pricing;
+- SMTP endpoints;
+- DNS requirements;
 
-Cloudflare pricing;
-
-SMTP provider pricing;
-
-SMTP endpoints;
-
-DNS requirements;
-```
 consult current primary provider documentation.
 
 Never assume that an old free-tier limit is still valid.
@@ -246,19 +232,15 @@ Never assume that an old free-tier limit is still valid.
 # 12. DNS
 
 Never invent:
-```
-MX records;
 
-DKIM selectors;
-
-DKIM keys;
-
-SPF values;
-
-verification tokens.
+- MX records;
+- DKIM selectors;
+- DKIM keys;
+- SPF values;
+- verification tokens.
 
 Use provider-generated values.
-```
+
 If documentation needs an example, use clearly marked placeholders.
 
 # 13. Worker changes
@@ -266,19 +248,14 @@ If documentation needs an example, use clearly marked placeholders.
 Keep Worker code small.
 
 The Worker should primarily:
-```
-receive the message;
 
-parse the recipient;
+- receive the message;
+- parse the recipient;
+- normalize it;
+- load validated rules;
+- find the first match;
+- forward or reject.
 
-normalize it;
-
-load validated rules;
-
-find the first match;
-
-forward or reject.
-```
 Avoid putting unrelated application logic in the Worker.
 
 # 14. Error handling
@@ -362,21 +339,14 @@ Do not commit generated credentials or local environment files.
 # 19. Completion criteria
 
 A task is complete when:
-```
-implementation is correct;
 
-tests pass;
-
-configuration validates;
-
-documentation is current;
-
-diagrams are current;
-
-no secrets are exposed;
-
-no unrelated behavior was changed.
-```
+- implementation is correct;
+- tests pass;
+- configuration validates;
+- documentation is current;
+- diagrams are current;
+- no secrets are exposed;
+- no unrelated behavior was changed.
 
 # 20. Preferred implementation style
 
