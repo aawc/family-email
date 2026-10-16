@@ -2,14 +2,15 @@
 
 ## 1. Overview & Context
 
-A automated security audit identified 25 open Dependabot vulnerability alerts in `package-lock.json` for the `family-email` repository. All 25 vulnerabilities originate exclusively within development toolchains and transitive dependencies:
+An automated security audit identified 30 open Dependabot vulnerability alerts in `package-lock.json` for the `family-email` repository, spanning both runtime and build/test dependencies:
 
-1. **Vitest test runner toolchain** (`vitest`, `@vitest/mocker`, `tinypool`, `rollup`, `vite`, `postcss`, `launch-editor`).
-2. **Wrangler / Miniflare Cloudflare Worker toolchain** (`wrangler`, `miniflare`, `sharp`, `undici`, `ws`, `@fastify/busboy`).
+1. **Runtime dependencies**: Root `yaml` parsing library (`yaml`).
+2. **Vitest test runner toolchain**: `vitest`, `@vitest/mocker`, `tinypool`, `rollup`, `vite`, `postcss`, `launch-editor`, `esbuild`.
+3. **Wrangler / Miniflare Cloudflare Worker toolchain**: `wrangler`, `miniflare`, `sharp`, `undici`, `ws`, `@fastify/busboy`, `esbuild`.
 
 The production Worker runtime code in `src/` does not bundle or execute these vulnerable libraries in production because Cloudflare Email Workers run natively on the V8 isolate edge platform without external Node.js dependencies (`yaml` is the only production dependency, parsed at deploy/build time). However, local development environments, CI runners, and pre-flight check pipelines must remain hermetic and secure against path traversal, arbitrary code execution, prototype pollution, denial of service, and arbitrary file disclosure.
 
-This plan details the systematic remediation, dependency tree upgrades, npm override pinning, and verification test gates required to resolve all 25 alerts.
+This plan details the systematic remediation, dependency tree upgrades, npm override pinning, and verification test gates required to resolve all 30 alerts.
 
 ---
 
@@ -44,12 +45,18 @@ The table below catalogs every identified Dependabot alert, its severity, the af
 | **#32** | `@fastify/busboy` | `[MODERATE]` | CRLF injection via multipart Content-Disposition filename/name | Upgrade / override `@fastify/busboy` to `>= 3.2.2` |
 | **#28** | `vitest` | `[MODERATE]` | Path traversal / arbitrary file read via redirect mock | Upgrade root `vitest` to `^3.2.4` |
 | **#27** | `@vitest/mocker` | `[MODERATE]` | Path traversal / arbitrary file read via redirect mock | Upgrade root `vitest` to `^3.2.4` (brings `@vitest/mocker@3.2.4`) |
+| **#8** | `yaml` | `[MODERATE]` | Stack Overflow via deeply nested YAML collections | Upgrade root `yaml` to `^2.9.1` |
+| **#1** | `esbuild` | `[MODERATE]` | Any website can send requests to dev server and read response | Upgrade / override `esbuild` to `>= 0.25.12` |
+| **#5** | `undici` | `[MODERATE]` | CRLF Injection in undici via `upgrade` option | Upgrade / override `undici` to `>= 7.29.0` |
+| **#24** | `undici` | `[MODERATE]` | Downstream response desynchronization via retry interceptor | Upgrade / override `undici` to `>= 7.29.0` |
+| **#25** | `undici` | `[MODERATE]` | Cookie attribute injection via unsanitized domain | Upgrade / override `undici` to `>= 7.29.0` |
 
 ---
 
 ## 3. Dependency Architecture & Strategy
 
 ### 3.1 Root Package Updates
+* Update `dependencies.yaml` from `^2.6.1` to `^2.9.1` (resolves alert #8 stack overflow).
 * Update `devDependencies.vitest` from `^2.1.8` to `^3.2.4`.
 * Update `devDependencies.wrangler` from `^3.88.0` to `^4.23.0` (eliminates legacy out-of-date CLI warnings and removes legacy sharp bindings).
 
@@ -59,6 +66,7 @@ To ensure that all sub-dependencies across the dependency graph are strictly bou
 ```json
 "overrides": {
   "@fastify/busboy": "^3.2.2",
+  "esbuild": "^0.25.12",
   "launch-editor": "^2.14.1",
   "postcss": "^8.5.28",
   "rollup": "^4.63.5",
@@ -80,7 +88,7 @@ To ensure that all sub-dependencies across the dependency graph are strictly bou
    - Update `package.json` with updated devDependencies and `overrides`.
    - Run `corepack npm install` to regenerate `package-lock.json` cleanly.
 3. **Dependency Tree Verification**:
-   - Run `corepack npm explain` on all 9 affected package families to verify that every installed instance meets or exceeds the minimum safe version.
+   - Run `corepack npm explain` on all 11 affected package families to verify that every installed instance meets or exceeds the minimum safe version.
    - Confirm zero legacy instances of `vitest@2`, `rollup@4.46.0`, `tinypool@1.1.1`, `postcss@8.5.6`, `undici@5`, `ws@8.18.0`, `sharp@0.33.5`, `@fastify/busboy@2`.
 4. **Automated Verification Pipeline**:
    - `corepack npm run typecheck` (`tsc --noEmit`)
