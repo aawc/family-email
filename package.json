@@ -27,7 +27,7 @@
   "author": "vakh",
   "license": "MIT",
   "dependencies": {
-    "yaml": "^2.6.1"
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241127.0",
@@ -39,6 +39,7 @@
   },
   "overrides": {
     "@fastify/busboy": "^3.2.2",
+    "esbuild": "^0.25.12",
     "launch-editor": "^2.14.1",
     "postcss": "^8.5.28",
     "rollup": "^4.63.5",
