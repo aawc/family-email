@@ -136,3 +136,11 @@ If an invalid rule or regression causes legitimate email to reject:
    * Navigate to **Cloudflare Dashboard** -> **Workers & Pages** -> **family-email-worker**.
    * Under the **Deployments** tab, select the previous stable deployment.
    * Click **Rollback to this version** for instantaneous remediation while investigating the defect.
+
+---
+
+## 7. Branch Protection & Repository Governance
+
+To protect the default branch from accidental force-pushing, deletion, or unverified changes, the repository enforces GitHub Rulesets and automated status checks.
+
+Refer to the dedicated guide: [docs/github-branch-protection.md](github-branch-protection.md).

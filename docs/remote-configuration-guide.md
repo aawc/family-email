@@ -2,10 +2,11 @@
 
 This guide provides step-by-step instructions for all external, third-party dashboard operations required to activate, configure, and maintain the `family-email` system.
 
-Because this project relies on serverless edge infrastructure rather than a self-hosted mail server, physical deployment requires coordinated configuration across three external platforms:
+Because this project relies on serverless edge infrastructure rather than a self-hosted mail server, physical deployment and maintenance requires coordinated configuration across remote platforms:
 1. **Cloudflare Dashboard**: Domain DNS management, Email Routing activation, destination address verification, and Email Worker binding.
 2. **Brevo Dashboard** (formerly Sendinblue): Outbound authenticated SMTP relay setup, domain signing, and DKIM generation.
 3. **Email Client (e.g., Gmail)**: Configuring "Send mail as" aliases using the authenticated SMTP relay.
+4. **GitHub Dashboard**: Branch protection rulesets and automated CI status check enforcement (detailed in [docs/github-branch-protection.md](github-branch-protection.md)).
 
 ```
 [VERIFICATION STATUS CODES]
