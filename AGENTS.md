@@ -318,7 +318,7 @@ where applicable.
 
 Architecture changes should include migration notes.
 
-18. Git workflow
+# 18. Git workflow
 
 Before finishing:
 ```
@@ -367,3 +367,33 @@ hard-coded aliases
 large dependencies
 unnecessary abstractions
 ```
+
+# 21. In-repository file placement
+
+Agents must ALWAYS only create files inside this repository.
+
+Never create files outside this repository (such as in `/tmp` or arbitrary paths in `$HOME`) while working on this repository.
+
+All temporary scripts, scratch files, artifacts, plans, notes, and documentation must reside strictly within the repository boundary (for example, in `scratch/`, `scripts/`, `docs/`, or `plans/`).
+
+# 22. Pre-implementation planning
+
+Agents must ALWAYS create a plan or design document and include it in the repository (e.g. in `docs/` or `plans/`) before making any code changes for the repository.
+
+Do not start implementing or editing code without an in-repository design or implementation plan document committed or staged within the repository.
+
+# 23. Remote website instructions
+
+If the user needs to make changes on a remote website (such as Cloudflare Dashboard setup, email routing destination verification, DNS provider records, or external SMTP relay configuration like Brevo), ALWAYS create a separate markdown document in `docs/` with those step-by-step instructions.
+
+Do not leave remote configuration steps only in ephemeral chat messages.
+
+# 24. Model and tooling neutrality
+
+Do not cite, name, or reference specific Large Language Models (LLMs), foundation models, AI providers, or agentic runtime harnesses within the repository (including code, comments, documentation, commit messages, and issues), unless strictly required for a technical integration.
+
+Prefer vendor-neutral, implementation-focused terminology (e.g., "automated agents", "assistants", "code generators", "static analyzers", or "tooling").
+
+Keep the repository clean of model branding, harness-specific metadata, or runtime prompt leaks.
+
+
