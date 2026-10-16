@@ -75,6 +75,13 @@ Public documentation and example configurations must never expose real family em
 * Sanitized examples in documentation use `alice@example.net`, `bob@example.net`, or `<DESTINATION_EMAIL>`.
 * The automated scanner flags unredacted personal mailboxes across tracked Markdown documents.
 
+### Policy 6: Dependency Security & Supply Chain Defense
+
+The repository minimizes runtime dependencies (only `yaml` is bundled for configuration parsing). To protect development and testing environments:
+* **Strict Overrides Pinning**: Transitive build and test toolchain dependencies (including `vitest`, `rollup`, `tinypool`, `vite`, `sharp`, `undici`, `ws`, `postcss`, and `@fastify/busboy`) are strictly constrained via `overrides` in `package.json` to prevent malicious or vulnerable versions from entering the dependency tree.
+* **Hermetic Local Verification**: All updates are verified using automated unit tests (`vitest run`), static type checking (`tsc --noEmit`), configuration schema checks, and secret scans before deployment.
+* **Continuous Dependabot Auditing**: Automated dependency vulnerability alerts are triaged and remediated by updating root devDependencies and pinning safe transitive overrides.
+
 ---
 
 ## 3. Incident Severity Matrix
