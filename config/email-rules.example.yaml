@@ -1,0 +1,52 @@
+# ==============================================================================
+# Email Routing Rules Configuration Template
+# ==============================================================================
+# Inbound routing rules evaluated by the Cloudflare Email Worker.
+#
+# RULE PRECEDENCE:
+# Rules are evaluated strictly in order (first-match-wins).
+# Place specific exceptions BEFORE general catch-all regex patterns.
+#
+# REGEX ANCHORING:
+# All regex patterns should be anchored with '^' and '$' to avoid ambiguous
+# substring matches (e.g. use '^.+\\.bin$' instead of '.bin').
+# Matching is case-insensitive.
+#
+# DESTINATIONS:
+# Destinations must be valid email addresses pre-verified in Cloudflare
+# Email Routing (Destination addresses tab).
+# ==============================================================================
+
+domain: example.net
+
+rules:
+  # 1. Specific exception rule (must precede broader .bin rule)
+  - name: backup-bin
+    pattern: "^backup\\.bin$"
+    destination: admin-bin@example.net
+    description: "Overrides general .bin matcher for backup-specific messages"
+
+  # 2. Generalized service alias pattern for disposable accounts
+  # Matches: shopping.bin, newsletter.bin, banking.bin
+  - name: bin
+    pattern: "^.+\\.bin$"
+    destination: bin@example.net
+    description: "Directs any alias ending with .bin to the bin mailbox"
+
+  # 3. Sub-identity aliases ending with .v
+  # Matches: service.v, alerts.v, github.v
+  - name: version
+    pattern: "^.+\\.v$"
+    destination: vvvv@example.net
+    description: "Directs any alias ending with .v to the vvvv mailbox"
+
+  # 4. Exact match alias for shared family mailbox
+  - name: family
+    pattern: "^family$"
+    destination: family@example.net
+    description: "Primary alias for the household mailbox"
+
+# Default action when no rules match
+no_match:
+  action: reject
+  reason: "Address not recognized"

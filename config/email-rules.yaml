@@ -1,0 +1,26 @@
+domain: example.net
+
+rules:
+  - name: backup-bin
+    pattern: "^backup\\.bin$"
+    destination: admin-bin@example.net
+    description: "Specific exception rule for backup.bin evaluated before general .bin matcher"
+
+  - name: bin
+    pattern: "^.+\\.bin$"
+    destination: bin@example.net
+    description: "Matches any alias ending in .bin (first-match-wins after backup-bin)"
+
+  - name: version
+    pattern: "^.+\\.v$"
+    destination: vvvv@example.net
+    description: "Matches any alias ending in .v"
+
+  - name: family
+    pattern: "^family$"
+    destination: family@example.net
+    description: "Direct alias for primary family mailbox"
+
+no_match:
+  action: reject
+  reason: "Address not recognized"

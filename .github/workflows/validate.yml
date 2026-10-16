@@ -1,0 +1,40 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static typecheck
+        run: npm run typecheck
+
+      - name: Scan for secrets
+        run: npm run scan-secrets
+
+      - name: Validate configuration schema and rules
+        run: npm run validate:config
+
+      - name: Validate documentation links and formatting
+        run: npm run validate:docs
+
+      - name: Run unit and integration tests
+        run: npm test
+
+      - name: Dry-run build Cloudflare Worker bundle
+        run: npm run build

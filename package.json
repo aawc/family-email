@@ -1,0 +1,40 @@
+{
+  "name": "family-email",
+  "version": "1.0.0",
+  "description": "Serverless regex-based email routing using Cloudflare Email Workers",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "validate:config": "tsx scripts/validate-config.ts",
+    "scan-secrets": "tsx scripts/scan-secrets.ts",
+    "validate:secrets": "tsx scripts/scan-secrets.ts",
+    "validate:docs": "tsx scripts/validate-docs.ts",
+    "validate": "tsx scripts/validate-config.ts && tsx scripts/scan-secrets.ts && tsx scripts/validate-docs.ts && vitest run",
+    "check": "tsc --noEmit && tsx scripts/validate-config.ts && tsx scripts/scan-secrets.ts && tsx scripts/validate-docs.ts && vitest run"
+  },
+  "keywords": [
+    "cloudflare",
+    "email-routing",
+    "worker",
+    "serverless",
+    "regex-routing"
+  ],
+  "author": "vakh",
+  "license": "MIT",
+  "dependencies": {
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.88.0"
+  }
+}
