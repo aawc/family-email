@@ -15,7 +15,9 @@ anything.v@example.com     → vvvv@gmail.com
 
 The receiving system is implemented with a Cloudflare Email Worker.
 
-Outbound email uses an SMTP relay such as Brevo.
+Outbound email uses an optional SMTP relay such as Brevo.
+
+For a beginner-friendly walkthrough with no prior Cloudflare or email routing experience, see the [Beginner Setup Guide](docs/setup-guide.md).
 
 ## Architecture
 
@@ -244,6 +246,9 @@ family-email/
 │   └── scan-secrets.ts
 │
 ├── docs/
+│   ├── setup-guide.md
+│   ├── remote-configuration-guide.md
+│   ├── github-branch-protection.md
 │   ├── dns.md
 │   ├── routing.md
 │   ├── operations.md
