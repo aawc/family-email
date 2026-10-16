@@ -1,30 +1,59 @@
 # Family Domain Email
 
-A lightweight personal/family email system for a domain managed by Cloudflare.
+A lightweight, serverless email routing system for personal and family domains managed by Cloudflare.
 
-The system supports email addresses that do not need to be individually created. Instead, the recipient address is matched against regular expressions and routed to the appropriate mailbox.
-
-For example:
+Instead of paying \$6 to \$12 per user per month for hosted mailboxes (like Google Workspace or Microsoft 365) or running your own complex email server, this project lets you receive email at unlimited custom addresses on your own domain and route them straight to your existing personal mailbox (such as Gmail, Outlook, or iCloud).
 
 ```
-anything.bin@example.com  → bin@gmail.com
-foo.bin@example.com        → bin@gmail.com
-backup.v@example.com       → vvvv@gmail.com
-anything.v@example.com     → vvvv@gmail.com
+Incoming email sent to:
+shopping.bin@yourdomain.com
+          │
+          ▼
+   Cloudflare DNS
+          │
+          ▼
+Cloudflare Email Routing
+          │
+          ▼
+Cloudflare Email Worker
+  (Checks rule: does it end in ".bin"?)
+          │
+          ▼ [MATCH]
+Forwarded directly to your existing mailbox:
+   bin@gmail.com
 ```
 
-The receiving system is implemented with a Cloudflare Email Worker.
+Addresses do not need to be created one by one. The recipient address is matched against ordered regular expressions in configuration and forwarded automatically:
 
-Outbound email uses an optional SMTP relay such as Brevo.
+```
+anything.bin@yourdomain.com  → bin@gmail.com
+shopping.bin@yourdomain.com  → bin@gmail.com
+backup.v@yourdomain.com      → vvvv@gmail.com
+anything.v@yourdomain.com    → vvvv@gmail.com
+family@yourdomain.com        → family@gmail.com
+```
 
-For a beginner-friendly walkthrough with no prior Cloudflare or email routing experience, see the [Beginner Setup Guide](docs/setup-guide.md).
+* For an exhaustive, click-by-click walkthrough, see the [Beginner Setup Guide](docs/setup-guide.md).
+* For external dashboard instructions, see the [Remote Configuration Guide](docs/remote-configuration-guide.md).
 
-## Architecture
+---
+
+## Architecture & Scope
+
+```
+[SYSTEM SCOPE]
+* INBOUND (Receiving email):   [CORE FEATURE - REQUIRED]
+  Receive mail at unlimited custom addresses and forward to existing mailboxes for $0/month.
+* OUTBOUND (Sending email):    [COMPLETELY OPTIONAL]
+  Send or reply to emails using your custom domain as the "From" address via an SMTP relay.
+```
+
+### Complete System Diagram
 
 ```
                          Internet
                             │
-                            │ SMTP
+                            │ SMTP (Incoming mail)
                             ▼
                  ┌──────────────────────┐
                  │      Cloudflare      │
@@ -40,12 +69,13 @@ For a beginner-friendly walkthrough with no prior Cloudflare or email routing ex
                  │ Catch-all: *@domain  │
                  └──────────┬───────────┘
                             │
+                            │ Dispatches event
                             ▼
                  ┌──────────────────────┐
                  │ Cloudflare Email     │
                  │ Worker               │
                  │                      │
-                 │ Regex router         │
+                 │ Regex router engine  │
                  └──────────┬───────────┘
                             │
              ┌──────────────┼──────────────┐
@@ -53,415 +83,325 @@ For a beginner-friendly walkthrough with no prior Cloudflare or email routing ex
              ▼              ▼              ▼
        bin@gmail.com   vvvv@gmail.com   family@gmail.com
 
-Existing mailbox / email client
+--- OPTIONAL OUTBOUND PATH ---
+Existing mailbox / email client (e.g., Gmail "Send mail as")
              │
-             │ SMTP submission
+             │ Authenticated SMTP submission
              ▼
-       Brevo SMTP relay
+       Brevo SMTP relay (or other SMTP provider)
              │
+             │ DKIM signed delivery
              ▼
         Internet mail
 ```
 
-## Design goals
+---
 
-The system should:
+## Why This Approach?
 
-* use a personally owned domain;
-* support arbitrary regex-based inbound addresses;
-* avoid operating an SMTP/IMAP server;
-* route addresses to ordinary existing mailboxes;
-* support multiple family members;
-* make routing rules configuration-driven;
-* keep secrets out of Git;
-* make changes easy to test;
-* keep code and documentation synchronized automatically.
+Operating a traditional mail server requires:
+* Managing SMTP and IMAP daemons;
+* Configuring complex spam filters (SpamAssassin, Rspamd);
+* Maintaining server security, TLS certificates, and software patches;
+* Managing IP reputation, reverse DNS (PTR), blocklists, and deliverability;
+* Handling storage, backups, and quota management.
 
-## Example routing rules
+This system delegates all operational complexity to managed services:
+* **Cloudflare** receives incoming mail and handles edge spam filtering for free.
+* **A tiny TypeScript Worker** matches addresses against your rules and forwards them.
+* **Your existing mailbox** (e.g. Gmail) stores your mail and provides search, spam filtering, and mobile apps.
+* **An external SMTP relay** (optional) handles outbound deliverability if you choose to send mail from your domain.
 
-Routing rules live in configuration rather than being hard-coded into the Worker.
+Total operating cost: **\$0/month** (only your annual domain registration fee of ~\$10-\$15/year).
 
+---
+
+## Quick-Start Guide for Novices
+
+Here is the high-level roadmap to set up your own domain email routing. For the detailed click-by-click walkthrough, consult the [Beginner Setup Guide](docs/setup-guide.md).
+
+### Prerequisites
+* **A custom domain** purchased from any registrar (Porkbun, Namecheap, Squarespace, GoDaddy, etc.).
+* **A free Cloudflare account** ([cloudflare.com](https://dash.cloudflare.com/)).
+* **An existing personal mailbox** (e.g. Gmail, Outlook) to receive forwarded mail.
+* **Node.js installed on your computer** ([nodejs.org](https://nodejs.org/)).
+
+---
+
+### Step 1: Connect Your Domain to Cloudflare DNS
+1. In the [Cloudflare Dashboard](https://dash.cloudflare.com/), click **Websites** -> **Add a site**.
+2. Enter your domain name and select the **Free** plan.
+3. Cloudflare will provide two nameservers (e.g. `ns1.cloudflare.com` and `ns2.cloudflare.com`).
+4. Log in to your domain registrar, change your domain's nameservers to Cloudflare's, and save.
+5. In Cloudflare, confirm the zone shows status **Active** (`[PASS]`).
+
+---
+
+### Step 2: Clone and Prepare the Project
+In your terminal, clone this repository, install dependencies, and log in to Cloudflare:
+
+```bash
+git clone https://github.com/<your-account>/family-email.git
+cd family-email
+npm install
+npx wrangler login
 ```
-domain: example.com
+
+`wrangler login` will open a browser tab. Click **Allow** to authorize deployments.
+
+---
+
+### Step 3: Verify Destination Mailboxes in Cloudflare
+Cloudflare requires proof of ownership for any external email address before it will forward mail to it.
+
+1. In Cloudflare Dashboard, go to **Email** -> **Email Routing** -> **Destination addresses** tab.
+2. Click **Add destination address** and enter your personal email (e.g., `yourname@gmail.com`).
+3. Open your personal inbox, find the confirmation email from Cloudflare, and click the verification link.
+4. Confirm the status displays **Verified** (`[PASS]`).
+5. Repeat for any additional family members who will receive forwarded mail.
+
+---
+
+### Step 4: Configure Your Routing Rules
+Open `config/email-rules.yaml` in your text editor.
+
+Update `domain` to your domain, and define your routing rules:
+
+```yaml
+domain: yourdomain.com
 
 rules:
+  # Specific exception: backup-related mail goes to a special mailbox
+  - name: backup-bin
+    pattern: "^backup\\.bin$"
+    destination: yourbackup@gmail.com
+    description: "Emergency backup service alerts"
+
+  # Wildcard rule: anything ending in .bin goes to your primary bin inbox
+  # Matches: shopping.bin, newsletter.bin, banking.bin
   - name: bin
     pattern: "^.+\\.bin$"
-    destination: bin@gmail.com
+    destination: yourprimary@gmail.com
+    description: "Disposable and service aliases"
 
+  # Sub-identity rule: anything ending in .v
+  # Matches: service.v, alerts.v
   - name: version
     pattern: "^.+\\.v$"
-    destination: vvvv@gmail.com
+    destination: yourversion@gmail.com
+    description: "Secondary identity aliases"
 
+  # Exact match rule: shared family inbox
+  # Matches only: family@yourdomain.com
   - name: family
     pattern: "^family$"
-    destination: family@gmail.com
+    destination: sharedfamily@gmail.com
+    description: "Shared household mailbox"
+
+# Explicit policy for any incoming email that does not match a rule
+no_match:
+  action: reject
+  reason: "Address not recognized"
 ```
 
-The regex is applied to the local part of the recipient address.
+---
 
-For:
-```
-invoice.bin@example.com
-```
+### Step 5: Test and Validate Locally
+Before deploying, run the local verification suite:
 
-the Worker evaluates:
-```
-invoice.bin
+```bash
+npm run check
 ```
 
-against:
-```
-^.+\.bin$
+This checks your YAML configuration, tests regex validity, scans for exposed credentials, and runs unit tests simulating email routing. Confirm all checks show `[PASS]`.
+
+---
+
+### Step 6: Deploy the Email Worker
+Publish the Worker to your Cloudflare account:
+
+```bash
+npm run deploy
 ```
 
-and forwards the message to:
-```
-bin@gmail.com
-```
+---
 
-## Routing semantics
+### Step 7: Enable Email Routing in Cloudflare
+1. In Cloudflare Dashboard, go to **Email** -> **Email Routing**.
+2. Click **Enable Email Routing** and allow Cloudflare to add the default MX and SPF DNS records automatically.
+3. In the **Routing rules** tab, scroll to **Catch-all rule** and click **Edit**:
+   * **Status**: Active / Enabled
+   * **Action**: Send to a Worker
+   * **Worker**: Select `family-email-worker`
+4. Click **Save**.
 
-Rules are evaluated in order.
+---
 
-The first matching rule wins.
+### Step 8: Test Inbound Email Delivery
+1. In your terminal, optionally open live event logs:
+   ```bash
+   npx wrangler tail
+   ```
+2. From a separate email account, send an email to `test.bin@yourdomain.com`.
+3. Check your personal inbox (`yourprimary@gmail.com`). The message should arrive within 5-15 seconds!
 
-Example:
-```
+---
+
+## Understanding Routing Rules & Regex
+
+### Rule Precedence: First-Match-Wins
+Rules are evaluated in strict order from top to bottom. The first rule whose pattern matches the recipient's local-part forwards the email and stops evaluation.
+
+Always place specific exception rules **before** general wildcard rules:
+```yaml
 rules:
+  # 1. Specific exception (MUST be first)
   - name: special
     pattern: "^backup\\.bin$"
     destination: special@gmail.com
 
+  # 2. General pattern (MUST be second)
   - name: bin
     pattern: "^.+\\.bin$"
     destination: bin@gmail.com
 ```
 
-Therefore:
-```
-backup.bin@example.com → special@gmail.com
-test.bin@example.com   → bin@gmail.com
-```
+With this order:
+* `backup.bin@yourdomain.com` matches `backup-bin` -> forwarded to `special@gmail.com`.
+* `shopping.bin@yourdomain.com` matches `bin` -> forwarded to `bin@gmail.com`.
 
-This allows specific exceptions to be placed before general rules.
+### Beginner Regex Cheat Sheet
 
-### No-match behavior
+The pattern is matched against the local part (everything before `@`):
 
-Messages that do not match any rule should have an explicit policy.
+| Desired Behavior | Example Inbound Addresses | Pattern | Explanation |
+| :--- | :--- | :--- | :--- |
+| **All addresses ending in `.bin`** | `store.bin`, `uber.bin` | `"^.+\\.bin$"` | `^` = start, `.+` = 1+ chars, `\\.` = dot, `bin$` = ends with bin |
+| **All addresses ending in `.v`** | `news.v`, `alerts.v` | `"^.+\\.v$"` | Matches any prefix followed by `.v` |
+| **Exact name only** | `family` | `"^family$"` | Matches only `family@yourdomain.com` |
+| **Addresses starting with `alert.`** | `alert.server`, `alert.bank` | `"^alert\\..+$"` | Matches anything with `alert.` prefix |
+| **Specific keyword exception** | `backup.bin` | `"^backup\\.bin$"` | Exact literal match |
 
-The default recommended policy is:
-```
-NO MATCH → reject
-```
+* Always anchor patterns with `^` at the beginning and `$` at the end.
+* Always escape dots as `\\.` (in regular expressions, an unescaped dot matches any character).
 
-Do not silently forward unmatched messages to a personal mailbox unless explicitly configured.
+---
 
-This reduces spam and prevents accidental delivery of arbitrary addresses.
-
-## Outbound email
-
-Inbound email and outbound email are separate concerns.
-
-### Receiving
+## Outbound Email (Sending as Your Domain) [OPTIONAL]
 
 ```
-Internet
-   ↓
-Cloudflare MX
-   ↓
-Cloudflare Email Worker
-   ↓
-Regex routing
-   ↓
-Existing mailbox
+================================================================================
+                           [OPTIONAL FEATURE NOTICE]
+Setting up outbound email is COMPLETELY OPTIONAL.
+If you only want to receive and read emails sent to your custom addresses,
+you are already done! You do not need an SMTP relay, Brevo, or outbound DNS keys.
+================================================================================
 ```
 
-### Sending
-```
-Email client
-   ↓
-SMTP relay
-   ↓
-Internet
-```
+### When Do You Need Outbound Setup?
+* **You DO NOT need it if**: You only want to receive emails, sign up for services with disposable aliases, and read forwarded messages in your personal inbox.
+* **You DO need it if**: You want to compose a new message or reply to an email directly from `anything.bin@yourdomain.com` and have the recipient see your custom domain in the "From" field.
 
-A provider such as Brevo can provide the outbound SMTP relay.
+### High-Level Outbound Setup (Using Free Brevo Relay)
+1. **Create an SMTP Relay Account**: Sign up for a free account at [Brevo](https://www.brevo.com/) (includes 300 free outgoing emails/day).
+2. **Add Your Domain in Brevo**: Add `yourdomain.com` under **Senders, Domains & Dedicated IPs**.
+3. **Add DNS Records in Cloudflare**:
+   * Add Brevo's domain verification TXT record.
+   * Add the DKIM TXT record (`mail._domainkey`).
+   * **Merge SPF Records**: Update Cloudflare's SPF TXT record so both Cloudflare and Brevo are included in one record:
+     ```
+     v=spf1 include:_spf.mx.cloudflare.net include:spf.brevo.com ~all
+     ```
+4. **Generate SMTP Credentials**: In Brevo, go to **Transactional** -> **Settings** -> **Configuration** and generate an SMTP key.
+5. **Connect to Your Email Client**: In Gmail, go to **Settings** -> **Accounts and Import** -> **Send mail as** -> **Add another email address**. Enter your custom alias, Brevo's SMTP server (`smtp-relay.brevo.com`, port `587`), and your SMTP key. Verify the confirmation code sent to your inbox.
 
-The exact provider, quota, pricing, SMTP hostname, and authentication requirements must be checked against current provider documentation rather than assumed from this repository.
+For comprehensive instructions and troubleshooting, see the [Beginner Setup Guide (Step 9)](docs/setup-guide.md#step-9-optional-outbound-email-sending-from-custom-addresses) and the [Remote Configuration Guide](docs/remote-configuration-guide.md).
 
-## Why not run our own mail server?
+---
 
-A self-hosted mail server requires dealing with:
-- SMTP;
-- IMAP;
-- spam filtering;
-- DNS;
-- SPF;
-- DKIM;
-- DMARC;
-- IP reputation;
-- Reverse DNS;
-- Blocklists;
-- TLS;
-- Backups;
-- Emailbox storage;
-- Abuse handling;
-- Deliverability.
+## Day-to-Day Maintenance: Adding or Changing Rules
 
+Whenever you want to add a new alias, change a destination, or add a family member:
 
-For personal/family usage, this is unnecessary operational complexity.
+1. **Edit**: Open `config/email-rules.yaml` and add or modify your rule.
+2. **Validate**: Run `npm run check` in your terminal to verify syntax and tests.
+3. **Deploy**: Run `npm run deploy`.
 
-Cloudflare handles receiving and the Worker handles routing.
+Changes take effect globally across Cloudflare edge locations within seconds.
 
-An external SMTP provider handles outbound delivery.
+---
 
-## Repository layout
+## Repository Layout
 
 ```
 family-email/
-├── README.md
-├── DESIGN.md
-├── AGENTS.md
-├── PROMPT.md
-├── package.json
-├── wrangler.jsonc
+├── README.md                          # Primary overview and quick-start guide
+├── AGENTS.md                          # Agent operating guidelines and system rules
+├── PROMPT.md                          # Repository prompt and engineering directives
+├── package.json                       # Project dependencies and script definitions
+├── wrangler.jsonc                     # Cloudflare Worker configuration
 │
 ├── src/
-│   ├── index.ts
-│   ├── router.ts
-│   └── types.ts
+│   ├── index.ts                       # Worker entry point: handles Cloudflare email event
+│   ├── router.ts                      # Core routing engine: normalization and regex matching
+│   └── types.ts                       # TypeScript interfaces for rules and configuration
 │
 ├── config/
-│   ├── email-rules.yaml
-│   └── email-rules.example.yaml
+│   ├── email-rules.yaml               # Active production routing configuration
+│   └── email-rules.example.yaml       # Template configuration with example patterns
 │
 ├── tests/
-│   ├── router.test.ts
-│   └── rules.test.ts
+│   ├── router.test.ts                 # Unit tests for address parsing and normalization
+│   └── rules.test.ts                  # Tests verifying email-rules.yaml matching behavior
 │
 ├── scripts/
-│   ├── validate-config.ts
-│   ├── validate-docs.ts
-│   └── scan-secrets.ts
+│   ├── validate-config.ts             # Validator for YAML schema, syntax, and regex safety
+│   ├── validate-docs.ts               # Linter for markdown links, alert boxes, and formatting
+│   └── scan-secrets.ts                # Scanner ensuring zero secrets exist in git
 │
-├── docs/
-│   ├── setup-guide.md
-│   ├── remote-configuration-guide.md
-│   ├── github-branch-protection.md
-│   ├── dns.md
-│   ├── routing.md
-│   ├── operations.md
-│   ├── security.md
-│   └── decisions.md
-│
-└── .github/
-    └── workflows/
-        └── validate.yml
+└── docs/
+    ├── setup-guide.md                 # Complete, novice-friendly step-by-step setup guide
+    ├── remote-configuration-guide.md  # Detailed external dashboard and DNS instructions
+    ├── github-branch-protection.md    # Repository governance and branch protection rulesets
+    ├── DESIGN.md                      # In-depth architectural design specifications
+    ├── dns.md                         # Authoritative DNS specifications (MX, SPF, DKIM, DMARC)
+    ├── routing.md                     # Technical routing engine specifications and semantics
+    ├── operations.md                  # Operational runbook, log tailing, and rollback procedures
+    ├── security.md                    # Security threat model and defense-in-depth policies
+    └── decisions.md                   # Architecture Decision Records (ADRs)
 ```
 
-## Configuration
+---
 
-Use an example configuration in Git:
-```
-domain: example.com
+## Available Developer Commands
 
-rules:
-  - name: bin
-    pattern: "^.+\\.bin$"
-    destination: bin@example.net
+| Command | Description |
+| :--- | :--- |
+| `npm run check` | Master pre-flight check: runs typecheck, config validator, secret scan, doc check, and tests. |
+| `npm test` | Runs the test suite via Vitest. |
+| `npm run validate:config` | Validates YAML syntax, required fields, and regex safety in `config/email-rules.yaml`. |
+| `npm run scan-secrets` | Scans the repository for accidental credentials or private keys. |
+| `npm run validate:docs` | Verifies documentation formatting, link integrity, and model neutrality. |
+| `npm run build` | Performs a dry-run deployment build with Wrangler. |
+| `npm run deploy` | Deploys the worker to Cloudflare's global edge network. |
+| `npx wrangler tail` | Streams real-time execution logs for live inbound emails. |
 
-  - name: version
-    pattern: "^.+\\.v$"
-    destination: version@example.net
-```
+---
 
-Private production configuration should not contain unnecessary personal information.
+## Frequently Asked Questions (FAQ)
 
-Never commit:
-- passwords;
-- SMTP credentials;
-- API tokens;
-- Cloudflare tokens;
-- private keys;
-- OAuth tokens.
+### Can I forward different addresses to different family members?
+Yes. Verify each family member's personal email address in Cloudflare Dashboard (Step 3). Then add rules directing their aliases to their personal address in `config/email-rules.yaml`.
 
-## DNS
+### What happens if someone sends an email to an unconfigured address?
+The Worker executes the `no_match` policy (`action: reject`). The sender receives an automated bounce notice ("Address not recognized"), and your personal inbox receives nothing. This keeps spam from flooding your inbox.
 
-Cloudflare should host the domain's DNS.
+### Is my email stored on Cloudflare?
+No. Cloudflare Email Routing is purely a transit service. The Worker receives the message event in memory, forwards the raw email stream to your destination mailbox, and terminates. No email bodies or attachments are stored on Cloudflare servers.
 
-The system requires appropriate:
-- MX records;
-- SPF;
-- DKIM;
-- DMARC;
-- Worker Email Routing configuration.
-
-Provider-generated DNS values must never be invented.
-
-The actual values should be obtained from the Cloudflare and outbound SMTP provider dashboards.
-
-See:
-```
-docs/dns.md
-```
-
-## Cloudflare Worker
-
-The Worker receives the email event and extracts:
-```
-message.to
-```
-
-It then extracts the local part:
-```
-foo.bin@example.com
-    ↓
-foo.bin
-```
-
-and evaluates the routing rules.
-
-Conceptually:
-```
-for (const rule of rules) {
-  if (rule.regex.test(localPart)) {
-    await message.forward(rule.destination);
-    return;
-  }
-}
-
-reject(message);
-```
-
-The production implementation should validate and compile configuration safely and should not allow malformed rules to break the entire Worker.
-
-## Regex requirements
-
-Every regex should be anchored.
-
-Prefer:
-```
-^.+\.bin$
-```
-
-over:
-```
-.bin
-```
-
-The first expression means:
-```
-the entire local part must end in .bin
-```
-
-This prevents accidental partial matches.
-
-Avoid overly broad expressions such as:
-```
-.*
-```
-
-unless they are intentionally being used as a final catch-all rule.
-
-## Testing
-
-Routing must be tested independently from Cloudflare.
-
-Example:
-```
-foo.bin@example.com
-→ bin@gmail.com
-
-bar.bin@example.com
-→ bin@gmail.com
-
-foo.v@example.com
-→ vvvv@gmail.com
-
-family@example.com
-→ family@gmail.com
-
-unknown@example.com
-→ reject
-```
-
-Also test:
-- uppercase input;
-- malformed addresses;
-- empty local parts;
-- overlapping rules;
-- special characters;
-- duplicate rules;
-- invalid regular expressions;
-- no-match behavior.
-
-## Security
-
-The Worker must not trust configuration blindly.
-
-Validate:
-
-- regex syntax;
-- destination email syntax;
-- domain;
-- rule names;
-- duplicate names;
-- duplicate patterns;
-- maximum rule count.
-
-Do not execute arbitrary code supplied through configuration.
-
-## Documentation automation
-
-Documentation is part of the project.
-
-When the implementation changes, the documentation must be reviewed.
-
-When the architecture changes, update:
-```
-README.md
-DESIGN.md
-AGENTS.md
-PROMPT.md
-docs/
-```
-
-CI should check for obvious inconsistencies.
-
-The goal is that an agent can inspect the repository and understand the actual architecture without relying on chat history.
-
-## Deployment
-
-The deployment process should eventually be:
-```
-npm install
-npm test
-npm run validate
-npm run deploy
-```
-
-The exact commands may change as the implementation evolves.
-
-Deployment must not require secrets to be committed to Git.
-
-## Operational principle
-
-Keep the system boring.
-
-Prefer:
-```
-Cloudflare
-+
-small Worker
-+
-configuration
-+
-existing mailboxes
-+
-SMTP provider
-```
-
-over a custom mail server.
-
-The system should be easy for another person to understand and maintain several years from now.
+### Where can I get more help?
+* Step-by-step beginner guide: [docs/setup-guide.md](docs/setup-guide.md)
+* Remote dashboard configurations: [docs/remote-configuration-guide.md](docs/remote-configuration-guide.md)
+* DNS and authentication records: [docs/dns.md](docs/dns.md)
+* Routing engine specifications: [docs/routing.md](docs/routing.md)
+* Operations and troubleshooting runbook: [docs/operations.md](docs/operations.md)
