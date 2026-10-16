@@ -81,6 +81,7 @@ Applicable scenarios:
 * Domain registrar / DNS provider records.
 * SMTP relay setup (e.g., Brevo account, API keys, sender validation, SMTP credentials).
 * Mailbox client configuration (e.g., Gmail "Send mail as" SMTP settings).
+* GitHub repository settings (branch protection rulesets, environments, secrets).
 
 Requirements:
 * Provide explicit, step-by-step instructions with exact menu paths, field names, and DNS record tables.
@@ -153,20 +154,24 @@ Ensure diagrams, examples, and rule catalogs stay accurate.
 
 ## 8. Git Workflow & Completion Criteria
 
-Before concluding work:
+Always decompose changes into small, single-purpose, self-contained atomic commits. Monolithic changesets grouping disparate modifications across unrelated concerns, features, or dependency updates are strictly prohibited.
+
+When branch protection is active on `main`, changes must be developed on feature branches and merged via Pull Requests after passing automated status checks.
+
+Before concluding work or committing:
 
 1. Inspect changes:
    ```bash
    git status
    git diff
    ```
-2. Run test suites and validation scripts (if present):
+2. Run master pre-flight checks:
    ```bash
-   npm test
-   npm run validate
+   npm run check
    ```
 3. Verify completion criteria:
-   - All unit and validation tests pass.
+   - Modifications are organized into self-contained atomic commits.
+   - All unit and validation tests pass cleanly.
    - In-repository file placement is strictly respected.
    - A pre-implementation plan or design doc is staged/committed in repo.
    - Remote website instructions are documented in `docs/` if manual setup is needed.
