@@ -320,19 +320,20 @@ Architecture changes should include migration notes.
 
 # 18. Git workflow
 
-Before finishing:
+Decompose all modifications into small, single-purpose, self-contained atomic commits. Never bundle unrelated changes (such as dependency upgrades and documentation guides) into a single monolithic commit. Each commit must compile cleanly, pass tests independently, and be individually revertible without collateral regressions.
+
+When branch protection is active on `main`, changes must be developed on feature branches and merged via Pull Requests after passing automated status checks.
+
+Before finishing or committing:
 ```
 git status
 git diff
 ```
 
-Then run:
+Then run the pre-flight gate:
 ```
-npm test
-npm run validate
+npm run check
 ```
-
-if those scripts exist.
 
 Do not commit generated credentials or local environment files.
 
@@ -341,6 +342,7 @@ Do not commit generated credentials or local environment files.
 A task is complete when:
 
 - implementation is correct;
+- atomic commit standards are respected;
 - tests pass;
 - configuration validates;
 - documentation is current;
@@ -384,7 +386,7 @@ Do not start implementing or editing code without an in-repository design or imp
 
 # 23. Remote website instructions
 
-If the user needs to make changes on a remote website (such as Cloudflare Dashboard setup, email routing destination verification, DNS provider records, or external SMTP relay configuration like Brevo), ALWAYS create a separate markdown document in `docs/` with those step-by-step instructions.
+If the user needs to make changes on a remote website (such as Cloudflare Dashboard setup, email routing destination verification, DNS provider records, external SMTP relay configuration like Brevo, or GitHub repository branch protection and rulesets), ALWAYS create a separate markdown document in `docs/` with those step-by-step instructions.
 
 Do not leave remote configuration steps only in ephemeral chat messages.
 
