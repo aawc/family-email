@@ -405,3 +405,4 @@ No. Cloudflare Email Routing is purely a transit service. The Worker receives th
 * DNS and authentication records: [docs/dns.md](docs/dns.md)
 * Routing engine specifications: [docs/routing.md](docs/routing.md)
 * Operations and troubleshooting runbook: [docs/operations.md](docs/operations.md)
+* Branch protection & repository governance: [docs/github-branch-protection.md](docs/github-branch-protection.md)
