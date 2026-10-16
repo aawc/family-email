@@ -20,7 +20,7 @@ The table below catalogs every identified Dependabot alert, its severity, the af
 
 | Alert ID | Component | Severity | Vulnerability Mechanism | Target Remediation |
 | :--- | :--- | :--- | :--- | :--- |
-| **#12** | `vitest` | `[CRITICAL]` | Arbitrary file read & execution when Vitest UI server is listening | Upgrade root `vitest` to `^3.2.4` |
+| **#12** | `vitest` | `[CRITICAL]` | Arbitrary file read & execution when Vitest UI server is listening | Upgrade root `vitest` to `^5.0.5` |
 | **#3** | `rollup` | `[HIGH]` | Rollup 4 arbitrary file write via path traversal | Upgrade / override `rollup` to `>= 4.63.5` |
 | **#34** | `tinypool` | `[CRITICAL]` | Prototype pollution gadget in worker options leads to RCE | Upgrade / override `tinypool` to `>= 2.2.0` |
 | **#33** | `tinypool` | `[CRITICAL]` | Prototype pollution gadget to RCE in `run()` options | Upgrade / override `tinypool` to `>= 2.2.0` |
@@ -43,8 +43,8 @@ The table below catalogs every identified Dependabot alert, its severity, the af
 | **#10** | `postcss` | `[MODERATE]` | XSS via unescaped `</style>` in CSS stringify output | Upgrade / override `postcss` to `>= 8.5.28` |
 | **#31** | `@fastify/busboy` | `[HIGH]` | Denial of Service via prototype-named multipart part header | Upgrade / override `@fastify/busboy` to `>= 3.2.2` |
 | **#32** | `@fastify/busboy` | `[MODERATE]` | CRLF injection via multipart Content-Disposition filename/name | Upgrade / override `@fastify/busboy` to `>= 3.2.2` |
-| **#28** | `vitest` | `[MODERATE]` | Path traversal / arbitrary file read via redirect mock | Upgrade root `vitest` to `^3.2.4` |
-| **#27** | `@vitest/mocker` | `[MODERATE]` | Path traversal / arbitrary file read via redirect mock | Upgrade root `vitest` to `^3.2.4` (brings `@vitest/mocker@3.2.4`) |
+| **#28** | `vitest` | `[MODERATE]` | Path traversal / arbitrary file read via redirect mock | Upgrade root `vitest` to `^5.0.5` |
+| **#27** | `@vitest/mocker` | `[MODERATE]` | Path traversal / arbitrary file read via redirect mock | Upgrade root `vitest` to `^5.0.5` (brings `@vitest/mocker@5.0.5`) |
 | **#8** | `yaml` | `[MODERATE]` | Stack Overflow via deeply nested YAML collections | Upgrade root `yaml` to `^2.9.1` |
 | **#1** | `esbuild` | `[MODERATE]` | Any website can send requests to dev server and read response | Upgrade / override `esbuild` to `>= 0.25.12` |
 | **#5** | `undici` | `[MODERATE]` | CRLF Injection in undici via `upgrade` option | Upgrade / override `undici` to `>= 7.29.0` |
@@ -57,7 +57,7 @@ The table below catalogs every identified Dependabot alert, its severity, the af
 
 ### 3.1 Root Package Updates
 * Update `dependencies.yaml` from `^2.6.1` to `^2.9.1` (resolves alert #8 stack overflow).
-* Update `devDependencies.vitest` from `^2.1.8` to `^3.2.4`.
+* Update `devDependencies.vitest` from `^2.1.8` to `^5.0.5` (resolves alerts #12, #28, #27).
 * Update `devDependencies.wrangler` from `^3.88.0` to `^4.23.0` (eliminates legacy out-of-date CLI warnings and removes legacy sharp bindings).
 
 ### 3.2 Transitive Dependency Overrides
@@ -66,6 +66,7 @@ To ensure that all sub-dependencies across the dependency graph are strictly bou
 ```json
 "overrides": {
   "@fastify/busboy": "^3.2.2",
+  "@vitest/mocker": "^5.0.5",
   "esbuild": "^0.25.12",
   "launch-editor": "^2.14.1",
   "postcss": "^8.5.28",
