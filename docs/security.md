@@ -82,6 +82,13 @@ The repository minimizes runtime dependencies (only `yaml` is bundled for config
 * **Hermetic Local Verification**: All updates are verified using automated unit tests (`vitest run`), static type checking (`tsc --noEmit`), configuration schema checks, and secret scans before deployment.
 * **Continuous Dependabot Auditing**: Automated dependency vulnerability alerts are triaged and remediated by updating root devDependencies and pinning safe transitive overrides.
 
+### Policy 7: Least-Privilege CI Workflow Permissions (`GITHUB_TOKEN` Hardening)
+
+All automated GitHub Actions workflows (including `.github/workflows/validate.yml`) must explicitly restrict the automatic `GITHUB_TOKEN` permissions to the minimum scopes required for job execution.
+* Workflows that only execute linting, testing, and dry-run builds must declare top-level `permissions: { contents: read }`.
+* Omitting the `permissions` block leaves token permissions unconstrained, violating the principle of least privilege.
+* Write scopes (`contents: write`, `pull-requests: write`, etc.) are strictly prohibited unless specifically required for deployment or release jobs.
+
 ---
 
 ## 3. Incident Severity Matrix

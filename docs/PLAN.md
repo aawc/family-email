@@ -278,6 +278,8 @@ Integration tests testing the real configuration files against concrete address 
 
 ### 3.7 Continuous Integration Pipeline (`.github/workflows/validate.yml`)
 
+The CI workflow enforces least-privilege token permissions by declaring a top-level `permissions: { contents: read }` block, restricting the automatic `GITHUB_TOKEN` to read-only repository contents access and preventing unconstrained token scopes across all jobs.
+
 Runs on every pull request and push to `main`:
 1. Check out repository.
 2. Set up Node.js 22 LTS.
