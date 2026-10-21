@@ -8,6 +8,8 @@ This runbook guides day-to-day maintenance, rule modifications, deployments, and
 
 All routing rules are version-controlled in `config/email-rules.yaml`. Never modify routing rules via external dashboards or directly in compiled bundles.
 
+*For comprehensive recipes, schema constraints, Git workflow, and deployment steps, see the [Custom Rules Guide](custom-rules.md).*
+
 ### Step-by-Step Rule Update Procedure
 
 ```

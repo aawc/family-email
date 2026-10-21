@@ -34,6 +34,7 @@ family@yourdomain.com        → family@gmail.com
 ```
 
 * For an exhaustive, click-by-click walkthrough, see the [Beginner Setup Guide](docs/setup-guide.md).
+* For detailed instructions on writing, testing, committing, and deploying custom rules, see the [Custom Rules Guide](docs/custom-rules.md).
 * For external dashboard instructions, see the [Remote Configuration Guide](docs/remote-configuration-guide.md).
 
 ---
@@ -319,15 +320,66 @@ For comprehensive instructions and troubleshooting, see the [Beginner Setup Guid
 
 ---
 
-## Day-to-Day Maintenance: Adding or Changing Rules
+## Writing and Pushing Custom Rules
 
-Whenever you want to add a new alias, change a destination, or add a family member:
+Routing rules are stored in `config/email-rules.yaml` and compiled directly into the Cloudflare Worker at deploy time.
 
-1. **Edit**: Open `config/email-rules.yaml` and add or modify your rule.
-2. **Validate**: Run `npm run check` in your terminal to verify syntax and tests.
-3. **Deploy**: Run `npm run deploy`.
+For comprehensive rule patterns, regex recipes, and test authoring, see the dedicated [Custom Rules Guide](docs/custom-rules.md).
 
-Changes take effect globally across Cloudflare edge locations within seconds.
+### The 4-Step Rule Workflow
+
+```
+1. Write Rules       Edit config/email-rules.yaml (place specific exceptions first)
+       │
+       ▼
+2. Test Locally      npm run check (validates YAML syntax, regex safety & tests)
+       │
+       ▼
+3. Push to Git       git commit && git push (preserves version control audit trail)
+       │
+       ▼
+4. Push to Edge      npm run deploy (bundles YAML and uploads Worker to Cloudflare)
+```
+
+#### Step 1: Write Your Rule
+Open `config/email-rules.yaml` and add your rule. Remember that rules evaluate in **first-match-wins** order:
+```yaml
+  # Specific exception rule:
+  - name: backup-bin
+    pattern: "^backup\\.bin$"
+    destination: admin@yourdomain.com
+    description: "Specific exception for backup alerts"
+
+  # Broad wildcard rule:
+  - name: bin
+    pattern: "^.+\\.bin$"
+    destination: primary@gmail.com
+    description: "Routes all other *.bin addresses"
+```
+
+> **Important**: The destination email address MUST be verified first in Cloudflare Dashboard (**Email Routing** -> **Destination addresses**).
+
+#### Step 2: Test Locally
+Before pushing, run the automated verification gate:
+```bash
+npm run check
+```
+To add automated test coverage for your new rule, add a test case to the table in `tests/rules.test.ts`.
+
+#### Step 3: Push to Git
+Commit your configuration and test changes to version control:
+```bash
+git add config/email-rules.yaml tests/rules.test.ts
+git commit -m "rules: add custom alias for services"
+git push
+```
+
+#### Step 4: Push to Cloudflare (Deploy)
+Publish the updated Worker containing your new rules to Cloudflare's global edge network:
+```bash
+npm run deploy
+```
+To verify live incoming traffic in real time, run `npx wrangler tail` and send a test email.
 
 ---
 
@@ -360,6 +412,7 @@ family-email/
 │   └── scan-secrets.ts                # Scanner ensuring zero secrets exist in git
 │
 └── docs/
+    ├── custom-rules.md                # Comprehensive guide for writing, testing, and pushing rules
     ├── setup-guide.md                 # Complete, novice-friendly step-by-step setup guide
     ├── remote-configuration-guide.md  # Detailed external dashboard and DNS instructions
     ├── github-branch-protection.md    # Repository governance and branch protection rulesets

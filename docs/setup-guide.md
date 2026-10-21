@@ -196,6 +196,8 @@ All routing decisions are controlled by a single configuration file: `config/ema
 
 Open `config/email-rules.yaml` in your text editor (such as VS Code, Sublime Text, or nano).
 
+*For advanced regex patterns, multi-keyword groupings, sub-addressing recipes, and local test authoring, see the dedicated [Custom Rules Guide](custom-rules.md).*
+
 ### Understanding the Configuration File
 
 Here is an annotated example of what the file looks like:
@@ -463,7 +465,7 @@ You can now select `anything.bin@yourdomain.com` in Gmail's "From" dropdown when
 
 ## How to Add or Change Rules Later
 
-Whenever you want to add a new alias, change a destination, or create a rule for a family member, follow this simple 3-step loop:
+Whenever you want to add a new alias, change a destination, or create a rule for a family member, follow this simple 3-step loop (for an in-depth walkthrough of testing, Git branching, and pushing, see the [Custom Rules Guide](custom-rules.md)):
 
 ### 1. Edit Configuration
 Open `config/email-rules.yaml` and add or edit your rule.

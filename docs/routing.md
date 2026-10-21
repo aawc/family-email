@@ -2,6 +2,8 @@
 
 This document details the configuration model, regex matching semantics, address normalization pipeline, and execution order of the `family-email` routing engine.
 
+*For practical, step-by-step instructions on authoring, testing, committing, and deploying rules, see the [Custom Rules Guide](custom-rules.md).*
+
 ---
 
 ## 1. Core Principles
